@@ -1,7 +1,7 @@
 import re
 from copy import deepcopy
 from datetime import datetime
-from collections import Mapping
+from collections.abc import Mapping
 
 from ..errors import OperationFailure
 
