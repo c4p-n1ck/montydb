@@ -33,7 +33,7 @@ sqlite_324 = sqlite3.sqlite_version_info >= (3, 24, 0)
 """
 
 
-SQLITE_DB_EXT = ".collection"
+SQLITE_DB_EXT = ".sqlite3"
 SQLITE_RECORD_TABLE = "documents"
 
 
@@ -93,7 +93,7 @@ class SQLiteKVEngine(object):
         return self._assemble_pragmas(self.__db_pragmas)
 
     def _connect(self, db_file, wconcern=None):
-        self.__conn = sqlite3.connect(db_file)
+        self.__conn = sqlite3.connect(db_file, check_same_thread=False)
         self.__conn.text_factory = str
 
         wcon_pragmas = ""
