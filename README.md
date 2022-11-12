@@ -1,4 +1,4 @@
-
+`pip install git+https://github.com/c4p-n1ck/montydb.git`
 <img src="artwork/logo.png" alt="drawing" width="600"/>
 
 [![Python package](https://github.com/davidlatwe/montydb/actions/workflows/python-package.yml/badge.svg)](https://github.com/davidlatwe/montydb/actions/workflows/python-package.yml)
