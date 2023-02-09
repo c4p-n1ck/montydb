@@ -218,9 +218,6 @@ def set_storage(
             value = _session_default[key]
         _session[key] = value
 
-    _bson_init(_session["use_bson"])
-    _mongo_compat(_session["mongo_version"])
-
     kwargs.update(_session)
 
     storage_cls = find_storage_cls(storage)
@@ -263,7 +260,16 @@ def provide_storage(repository):
         with open(setup, "r") as fp:
             storage_name = fp.readline().strip()
 
-    return find_storage_cls(storage_name)
+    storage_cls = find_storage_cls(storage_name)
+    config = storage_cls.read_config(repository)
+
+    for key in ("use_bson", "mongo_version"):
+        _session[key] = config.get(key, _session_default[key])
+
+    _bson_init(_session["use_bson"])
+    _mongo_compat(_session["mongo_version"])
+
+    return storage_cls
 
 
 def _bson_init(use_bson):
@@ -292,33 +298,25 @@ def _bson_init(use_bson):
 def _mongo_compat(version):
     from .engine import queries
 
+    def patch(mod, func, ver_func):
+        setattr(mod, func, getattr(mod, ver_func))
+
     if version.startswith("3"):
-        v3 = getattr(queries, "_is_comparable_ver3")
-        setattr(queries, "_is_comparable", v3)
+        patch(queries, "_is_comparable", "_is_comparable_ver3")
+        patch(queries, "_regex_options_check", "_regex_options_")
+        patch(queries, "_mod_remainder_not_num", "_mod_remainder_not_num_")
 
-    if version.startswith("4"):
-        v4 = getattr(queries, "_is_comparable_ver4")
-        setattr(queries, "_is_comparable", v4)
+    elif version == "4.0":
+        patch(queries, "_is_comparable", "_is_comparable_ver4")
+        patch(queries, "_regex_options_check", "_regex_options_")
+        patch(queries, "_mod_remainder_not_num", "_mod_remainder_not_num_")
 
-    if version == "4.2":
-        setattr(
-            queries,
-            "_regex_options_check",
-            getattr(queries, "_regex_options_v42")
-        )
-        setattr(
-            queries,
-            "_mod_remainder_not_num",
-            getattr(queries, "_mod_remainder_not_num_v42")
-        )
+    elif version == "4.2":
+        patch(queries, "_is_comparable", "_is_comparable_ver4")
+        patch(queries, "_regex_options_check", "_regex_options_v42")
+        patch(queries, "_mod_remainder_not_num", "_mod_remainder_not_num_v42")
+
     else:
-        setattr(
-            queries,
-            "_regex_options_check",
-            getattr(queries, "_regex_options_")
-        )
-        setattr(
-            queries,
-            "_mod_remainder_not_num",
-            getattr(queries, "_mod_remainder_not_num_")
-        )
+        patch(queries, "_is_comparable", "_is_comparable_ver4")
+        patch(queries, "_regex_options_check", "_regex_options_")
+        patch(queries, "_mod_remainder_not_num", "_mod_remainder_not_num_v42")
